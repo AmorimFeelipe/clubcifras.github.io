@@ -1,1 +1,113 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Minhas Cifras de Músicas</title>
+    <style>
+        /* CSS inline igual ao anterior */
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #lista-musicas { list-style: none; padding: 0; }
+        #lista-musicas li { margin-bottom: 10px; }
+        #cifra-container { font-family: monospace; white-space: pre-wrap; margin-top: 20px; border: 1px solid #ccc; padding: 10px; max-width: 800px; }
+        .song { line-height: 1.5; }
+        .paragraph { margin-bottom: 10px; }
+        .chord { color: red; font-weight: bold; position: relative; top: -0.5em; }
+        .lyrics { color: black; }
+        .chorus { background-color: #f0f0f0; padding: 5px; }
+        #transposicao-controls { margin-top: 10px; }
+        button { margin-right: 10px; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <h1>Minhas Cifras</h1>
+    <ul id="lista-musicas"></ul>
+    
+    <div id="cifra-container"></div>
+    
+    <div id="transposicao-controls" style="display: none;">
+        <button id="transpor-menos">-1 (Baixar Tom)</button>
+        <button id="transpor-mais">+1 (Subir Tom)</button>
+        <span id="tom-atual">Tom Original</span>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chordsheetjs@latest/dist/chordsheetjs.umd.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Lista manual de músicas (adicione nomes de arquivos aqui)
+            const listaMusicas = [
+                { file: 'let-it-be.cho', title: 'Let It Be - The Beatles' },
+                { file: 'outra-musica.cho', title: 'Outra Música - Artista' }
+                // Adicione mais: { file: 'nova.cho', title: 'Nova Música' }
+            ];
+
+            const lista = document.getElementById('lista-musicas');
+            const container = document.getElementById('cifra-container');
+            const controls = document.getElementById('transposicao-controls');
+            const btnMenos = document.getElementById('transpor-menos');
+            const btnMais = document.getElementById('transpor-mais');
+            const tomAtual = document.getElementById('tom-atual');
+
+            let currentSong = null;
+            let transposeAmount = 0;
+
+            // Gera a lista dinamicamente
+            listaMusicas.forEach(musica => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = '#';
+                a.textContent = musica.title;
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loadMusica(musica.file);
+                });
+                li.appendChild(a);
+                lista.appendChild(li);
+            });
+
+            // Função para carregar via fetch
+            async function loadMusica(file) {
+                try {
+                    const response = await fetch(`musicas/${file}`);
+                    const chordSheet = await response.text();
+                    const parser = new ChordSheetJS.ChordProParser();
+                    currentSong = parser.parse(chordSheet);
+                    transposeAmount = 0;
+                    tomAtual.textContent = 'Tom Original';
+                    renderSong(currentSong);
+                    controls.style.display = 'block';
+                } catch (error) {
+                    container.innerHTML = '<p>Erro ao carregar: ' + error.message + '</p>';
+                }
+            }
+
+            // Função para transpor (igual ao anterior)
+            function transposeSong(song, semitones) {
+                return song.transpose(semitones);
+            }
+
+            // Função para renderizar
+            function renderSong(song) {
+                const formatter = new ChordSheetJS.HtmlDivFormatter();
+                container.innerHTML = formatter.format(song);
+            }
+
+            // Eventos de transposição
+            btnMenos.addEventListener('click', () => {
+                transposeAmount -= 1;
+                const transposed = transposeSong(currentSong, transposeAmount);
+                renderSong(transposed);
+                tomAtual.textContent = `Tom Transposto: ${transposeAmount} semitons`;
+            });
+
+            btnMais.addEventListener('click', () => {
+                transposeAmount += 1;
+                const transposed = transposeSong(currentSong, transposeAmount);
+                renderSong(transposed);
+                tomAtual.textContent = `Tom Transposto: ${transposeAmount} semitons`;
+            });
+        });
+    </script>
+</body>
+</html>
